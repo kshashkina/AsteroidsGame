@@ -123,3 +123,44 @@ public:
         --lives;
     }
 };
+
+
+class ScoreManager {
+private:
+    int currentScore;
+    std::string filePath;
+    int highScore;
+
+public:
+    ScoreManager() : currentScore(0), filePath("C:\\KSE IT\\oop_game\\high_score.txt") {}
+
+    void saveHighScore() {
+        std::ofstream file(filePath);
+        if (file.is_open()) {
+            file << currentScore;
+            file.close();
+        }
+    }
+
+    int loadHighScore() {
+        std::ifstream file(filePath);
+        int loadedHighScore = 0;
+        if (file.is_open()) {
+            file >> loadedHighScore;
+            file.close();
+        }
+        return loadedHighScore;
+    }
+
+    void setScore(int value) {
+        currentScore += value;
+    }
+
+    void resetScore(){
+        currentScore = 0;
+    }
+
+    int getCurrentScore(){
+        return currentScore;
+    }
+};
