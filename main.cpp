@@ -164,3 +164,136 @@ public:
         return currentScore;
     }
 };
+
+
+class Asteroid {
+private:
+    float meteorSpawnInterval;
+    sf::Texture meteorTexture1;
+    sf::Texture meteorTexture2;
+    sf::Texture meteorTexture3;
+
+public:
+    Asteroid() : meteorSpawnInterval(3.5f), currentMeteorSpawnTime(0.0f) {
+        if (!meteorTexture1.loadFromFile("C:\\KSE IT\\oop_game\\meteor1.png") ||
+            !meteorTexture2.loadFromFile("C:\\KSE IT\\oop_game\\meteor2.png") ||
+            !meteorTexture3.loadFromFile("C:\\KSE IT\\oop_game\\meteor3.png")) {
+            throw std::runtime_error("Failed to load texture");
+        }
+    }
+
+    const sf::Texture& getMeteorTexture1() const {
+        return meteorTexture1;
+    }
+
+    const sf::Texture& getMeteorTexture2() const {
+        return meteorTexture2;
+    }
+
+    const sf::Texture& getMeteorTexture3() const {
+        return meteorTexture3;
+    }
+
+
+    void generate(const sf::RenderWindow& window) {
+        currentMeteorSpawnTime += 1.0f / 60;
+
+        if (currentMeteorSpawnTime >= meteorSpawnInterval) {
+            sf::Sprite meteor;
+            int randomMeteorType = std::rand() % 3 + 1;
+            switch (randomMeteorType) {
+                case 1:
+                    meteor.setTexture(meteorTexture1);
+                    break;
+                case 2:
+                    meteor.setTexture(meteorTexture2);
+                    break;
+                case 3:
+                    meteor.setTexture(meteorTexture3);
+                    break;
+            }
+
+            float spawnX, spawnY;
+            int side = std::rand() % 4;
+            switch (side) {
+                case 0:
+                    spawnX = static_cast<float>(std::rand() % window.getSize().x);
+                    spawnY = -static_cast<float>(meteor.getGlobalBounds().height);
+                    break;
+                case 1:
+                    spawnX = static_cast<float>(window.getSize().x);
+                    spawnY = static_cast<float>(std::rand() % window.getSize().y);
+                    break;
+                case 2:
+                    spawnX = static_cast<float>(std::rand() % window.getSize().x);
+                    spawnY = static_cast<float>(window.getSize().y);
+                    break;
+                case 3:
+                    spawnX = -static_cast<float>(meteor.getGlobalBounds().width);
+                    spawnY = static_cast<float>(std::rand() % window.getSize().y);
+                    break;
+            }
+
+            meteor.setPosition(spawnX, spawnY);
+
+            float directionX = static_cast<float>(std::rand() % 200 - 100);
+            float directionY = static_cast<float>(std::rand() % 200 - 100);
+
+            float length = std::sqrt(directionX * directionX + directionY * directionY);
+            if (length != 0) {
+                directionX /= length;
+                directionY /= length;
+            }
+
+            float meteorSpeed = static_cast<float>(std::rand() % 1 + 1) / 5.0f;
+            meteor.setScale(0.6f, 0.6f);
+
+            meteors.push_back(meteor);
+            meteorDirections.push_back(sf::Vector2f(directionX, directionY));
+            meteorSpeeds.push_back(meteorSpeed);
+
+            currentMeteorSpawnTime = 0.0f;
+        }
+    }
+
+    void update(const sf::RenderWindow& window) {
+        for (size_t i = 0; i < meteors.size(); ++i) {
+            float meteorSpeed = meteorSpeeds[i];
+            sf::Vector2f direction = meteorDirections[i];
+            meteors[i].move(direction.x * meteorSpeed, direction.y * meteorSpeed);
+
+            if (meteors[i].getPosition().x < -meteors[i].getGlobalBounds().width ||
+                meteors[i].getPosition().y < -meteors[i].getGlobalBounds().height ||
+                meteors[i].getPosition().x > window.getSize().x ||
+                meteors[i].getPosition().y > window.getSize().y) {
+                meteors.erase(meteors.begin() + i);
+                meteorDirections.erase(meteorDirections.begin() + i);
+                meteorSpeeds.erase(meteorSpeeds.begin() + i);
+                --i;
+            }
+        }
+    }
+
+    void draw(sf::RenderWindow& window) const {
+        for (const auto& meteor : meteors) {
+            window.draw(meteor);
+        }
+    }
+
+    const std::vector<sf::Sprite>& getMeteors() const {
+        return meteors;
+    }
+
+    void removeMeteor(size_t index) {
+        if (index < meteors.size()) {
+            meteors.erase(meteors.begin() + index);
+            meteorDirections.erase(meteorDirections.begin() + index);
+            meteorSpeeds.erase(meteorSpeeds.begin() + index);
+        }
+    }
+
+    std::vector<sf::Sprite> meteors;
+    std::vector<sf::Vector2f> meteorDirections;
+    std::vector<float> meteorSpeeds;
+    float currentMeteorSpawnTime;
+};
