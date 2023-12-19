@@ -297,3 +297,74 @@ public:
     std::vector<float> meteorSpeeds;
     float currentMeteorSpawnTime;
 };
+
+class GameManager {
+    sf::Clock textureTimer;
+public:
+    void checkCollisions(Spaceship& spaceship, Asteroid& asteroid, ScoreManager& scoreManager) {
+        sf::Sprite shipSprite = spaceship.getSprite();
+        sf::FloatRect shipBounds = shipSprite.getGlobalBounds();
+
+        for (size_t i = 0; i < asteroid.getMeteors().size(); ++i) {
+            sf::Sprite meteor = asteroid.getMeteors()[i];
+            sf::FloatRect meteorBounds = meteor.getGlobalBounds();
+
+            if (shipBounds.intersects(meteorBounds)) {
+                spaceship.decreaseLives();
+                if (spaceship.getLives() <= 0){
+                    gameOver = true;
+                    break;
+                }
+                spaceship.blinkTextureForDuration();
+                textureTimer.restart();
+                asteroid.removeMeteor(i);
+            }
+        }
+    }
+
+    void setTextureBack(Spaceship& spaceship){
+        if (textureTimer.getElapsedTime().asSeconds() >= 0.1f) {
+            spaceship.blinkReversed();
+        }
+    }
+
+    bool getGameStatus(){
+        return gameOver;
+    }
+
+    void checkProjectileCollisions(Spaceship& spaceship, Asteroid& asteroid, ScoreManager& scoreManager) {
+        for (size_t i = 0; i < spaceship.projectiles.size(); ) {
+            const sf::Sprite& projectile = spaceship.projectiles[i];
+            sf::FloatRect projectileBounds = projectile.getGlobalBounds();
+
+            bool hit = false;
+            for (size_t j = 0; j < asteroid.getMeteors().size() && !hit; ++j) {
+                sf::Sprite& meteor = const_cast<sf::Sprite &>(asteroid.getMeteors()[j]);
+                sf::FloatRect meteorBounds = meteor.getGlobalBounds();
+
+                if (projectileBounds.intersects(meteorBounds)) {
+                    const sf::Texture* tex = meteor.getTexture();
+                    if (tex == &asteroid.getMeteorTexture1()) {
+                        meteor.setTexture(asteroid.getMeteorTexture2(), true);
+                        scoreManager.setScore(3);
+                    } else if (tex == &asteroid.getMeteorTexture2()) {
+                        meteor.setTexture(asteroid.getMeteorTexture3(), true);
+                        scoreManager.setScore(2);
+                    } else if (tex == &asteroid.getMeteorTexture3()) {
+                        asteroid.removeMeteor(j);
+                        scoreManager.setScore(1);
+                        hit = true;
+                    }
+
+                    spaceship.projectiles.erase(spaceship.projectiles.begin() + i);
+                }
+            }
+
+            if (!hit) {
+                ++i;
+            }
+        }
+    }
+
+    bool gameOver = false;
+};
