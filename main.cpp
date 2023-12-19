@@ -52,6 +52,61 @@ public:
         lastMousePosition = currentMousePosition;
     }
 
+    void blinkTextureForDuration() {
+        if (!textureChanged) {
+            textureChanged = true;
+            sprite.setTexture(hittedTexture);
+        }
+    }
+
+    void blinkReversed(){
+        if (textureChanged){
+            sprite.setTexture(texture);
+            textureChanged = false;
+        }
+    }
+
+    std::vector<sf::Sprite> projectiles;
+
+    void shootProjectile() {
+        if (projectileClock.getElapsedTime().asSeconds() >= 0.3f) {
+            sf::Sprite projectile(projectileTexture);
+
+            projectile.setScale(0.08f, 0.08f);
+
+            float scaleFactor = 0.1f;
+            sf::Vector2f noseOffset(std::sin(currentRotation * 3.14159f / 180) * sprite.getGlobalBounds().height * scaleFactor,
+                                    -std::cos(currentRotation * 3.14159f / 180) * sprite.getGlobalBounds().height * scaleFactor);
+            projectile.setPosition(sprite.getPosition() + noseOffset);
+            projectile.setRotation(currentRotation);
+
+            projectiles.push_back(projectile);
+            projectileClock.restart();
+        }
+    }
+
+    void updateProjectiles(const sf::RenderWindow& window) {
+        for (auto& projectile : projectiles) {
+            float angle = projectile.getRotation();
+            float speed = 2.0f;
+            projectile.move(std::sin(angle * 3.14159f / 180) * speed, -std::cos(angle * 3.14159f / 180) * speed);
+        }
+
+        projectiles.erase(
+                std::remove_if(
+                        projectiles.begin(),
+                        projectiles.end(),
+                        [&window](const sf::Sprite& projectile) {
+                            return projectile.getPosition().y < -projectile.getGlobalBounds().height ||
+                                   projectile.getPosition().y > window.getSize().y ||
+                                   projectile.getPosition().x < -projectile.getGlobalBounds().width ||
+                                   projectile.getPosition().x > window.getSize().x;
+                        }
+                ),
+                projectiles.end()
+        );
+    }
+
     sf::Sprite& getSprite() {
         return sprite;
     }
